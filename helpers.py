@@ -1,3 +1,5 @@
+helpers.py
+
 import sqlite3 import calendar from datetime import datetime from telebot.types import User
 
 from markups import MONTHS
@@ -8,13 +10,13 @@ DB_PATH = 'bot.db'
 
 def month_code_to_int(code): """Convierte código de mes ("ene") a número de mes (1=enero).""" codes = [c for c, _ in MONTHS] return codes.index(code) + 1
 
-def days_in_month(code, year=None): """Devuelve cantidad de días del mes dado para el año especificado (por defecto el actual).""" if year is None: year = datetime.now().year month = month_code_to_int(code) return calendar.monthrange(year, month)[1]
+def days_in_month(code, year=None): """Devuelve la cantidad de días del mes dado para el año especificado (por defecto el actual).""" if year is None: year = datetime.now().year month = month_code_to_int(code) return calendar.monthrange(year, month)[1]
 
 def calculate_total_days(codes, year=None): """Suma los días de todos los códigos de mes proporcionados.""" return sum(days_in_month(c, year) for c in codes)
 
 def calculate_amount(total_days, price_per_day): """Calcula el monto total a pagar.""" return total_days * price_per_day
 
-def calculate_expiration_date(codes, year=None): """Calcula la fecha de vencimiento: último día del último mes seleccionado.""" if year is None: year = datetime.now().year # Ordenar según el orden en MONTHS code_order = [c for c, _ in MONTHS] sorted_codes = sorted(codes, key=lambda c: code_order.index(c)) last = sorted_codes[-1] month = month_code_to_int(last) last_day = calendar.monthrange(year, month)[1] return datetime(year, month, last_day).strftime("%Y-%m-%d")
+def calculate_expiration_date(codes, year=None): """Calcula la fecha de vencimiento: último día del último mes seleccionado.""" if year is None: year = datetime.now().year code_order = [c for c, _ in MONTHS] sorted_codes = sorted(codes, key=lambda c: code_order.index(c)) last = sorted_codes[-1] month = month_code_to_int(last) last_day = calendar.monthrange(year, month)[1] return datetime(year, month, last_day).strftime('%Y-%m-%d')
 
 def format_date(date_str, fmt_in="%Y-%m-%d", fmt_out="%d/%m/%Y"): """Formatea una fecha de un formato a otro.""" dt = datetime.strptime(date_str, fmt_in) return dt.strftime(fmt_out)
 
