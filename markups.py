@@ -1,8 +1,9 @@
 # markups.py
 
+from datetime import datetime
 from telebot import types
 
-# Lista de meses con código y nombre completo
+# Lista de meses y sus nombres completos
 MONTHS = [
     ("ene", "Enero"), ("feb", "Febrero"), ("mar", "Marzo"),
     ("abr", "Abril"), ("may", "Mayo"), ("jun", "Junio"),
@@ -10,76 +11,77 @@ MONTHS = [
     ("oct", "Octubre"), ("nov", "Noviembre"), ("dic", "Diciembre")
 ]
 
+# --- Teclados principales ---
 def main_menu():
     """
-    Teclado principal para el usuario:
-    - Pagar membresía
-    - Ver vencimiento
-    - Cancelar acción
+    🏠 Teclado principal para el bot:
+    - 💰 Pagar membresía VIP
+    - 📅 Ver vencimiento
+    - ❌ Cancelar
     """
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(types.KeyboardButton("💰 Pagar membresía VIP"))
-    markup.add(types.KeyboardButton("📅 Ver vencimiento"))
-    markup.add(types.KeyboardButton("❌ Cancelar"))
-    return markup
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add(types.KeyboardButton("💰 Pagar membresía VIP"))
+    kb.add(types.KeyboardButton("📅 Ver vencimiento"))
+    kb.add(types.KeyboardButton("❌ Cancelar"))
+    return kb
 
-def months_selection_keyboard(selected=None):
+# --- Selección de año y meses ---
+def year_selection_keyboard(num_years=3):
     """
-    Teclado inline para seleccionar meses.
-    Muestra ✅ delante de los meses ya seleccionados.
-    Incluye botones de Confirmar y Cancelar.
+    🔢 Inline keyboard para elegir el año de la membresía.
+    Genera botones desde el año actual hasta + num_years.
+    """
+    current = datetime.now().year
+    years = [current + i for i in range(num_years)]
+    kb = types.InlineKeyboardMarkup(row_width=2)
+    for y in years:
+        kb.add(types.InlineKeyboardButton(str(y), callback_data=f"year_{y}"))
+    kb.add(types.InlineKeyboardButton("❌ Cancelar", callback_data="cancel"))
+    return kb
+
+def months_selection_keyboard(year, selected=None, exclude=None):
+    """
+    📆 Inline keyboard para seleccionar meses de un año específico.
+    - year: año seleccionado (int)
+    - selected: lista de etiquetas "YYYY-cc" ya marcados
+    - exclude: lista de códigos de mes que ya están pagados (se ocultan)
     """
     if selected is None:
         selected = []
-    markup = types.InlineKeyboardMarkup(row_width=3)
-    buttons = []
-    for code, name in MONTHS:
-        prefix = "✅ " if code in selected else ""
-        # Usamos abreviatura de tres letras para el texto
-        buttons.append(
-            types.InlineKeyboardButton(
-                f"{prefix}{name[:3]}",
-                callback_data=f"month_{code}"
-            )
-        )
-    markup.add(*buttons)
-    # Botones de acción
-    markup.add(
-        types.InlineKeyboardButton("✅ Confirmar", callback_data="confirm_payment"),
-        types.InlineKeyboardButton("❌ Cancelar", callback_data="cancel_payment")
-    )
-    return markup
+    if exclude is None:
+        exclude = []
 
+    kb = types.InlineKeyboardMarkup(row_width=3)
+    for code, name in MONTHS:
+        if code in exclude:
+            continue
+        tag = f"{year}-{code}"
+        prefix = "✅ " if tag in selected else ""
+        kb.add(types.InlineKeyboardButton(f"{prefix}{name[:3]}", callback_data=f"month_{year}_{code}"))
+
+    # Si no hay meses disponibles
+    if all(code in exclude for code, _ in MONTHS):
+        kb.add(types.InlineKeyboardButton("ℹ️ Nada por pagar", callback_data="none"))
+
+    # Botones de acción
+    kb.add(
+        types.InlineKeyboardButton("✅ Confirmar", callback_data="confirm_payment"),
+        types.InlineKeyboardButton("❌ Cancelar", callback_data="cancel")
+    )
+    return kb
+
+# --- Teclados de administración ---
 def admin_action_keyboard(user_id):
     """
-    Teclado inline para que los admins gestionen una solicitud:
+    👮 Inline keyboard para que los admins gestionen una solicitud:
     - Aprobar
     - Rechazar
-    - Pedir más información
+    - Pedir más info
     """
-    markup = types.InlineKeyboardMarkup()
-    markup.add(
+    kb = types.InlineKeyboardMarkup()
+    kb.add(
         types.InlineKeyboardButton("✅ Aprobar", callback_data=f"approve_{user_id}"),
         types.InlineKeyboardButton("❌ Rechazar", callback_data=f"reject_{user_id}")
     )
-    markup.add(
-        types.InlineKeyboardButton("📝 Pedir más info", callback_data=f"moreinfo_{user_id}")
-    )
-    return markup
-
-def cancel_keyboard():
-    """
-    Teclado de reply para cancelar la operación actual.
-    """
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(types.KeyboardButton("❌ Cancelar"))
-    return markup
-
-def back_keyboard():
-    """
-    Teclado de reply con opción de retroceder o cancelar.
-    """
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(types.KeyboardButton("⬅️ Atrás"))
-    markup.add(types.KeyboardButton("❌ Cancelar"))
-    return markup
+    kb.add(types.InlineKeyboardButton("📝 Pedir más info", callback_data=f"moreinfo_{user_id}"))
+    return kb
