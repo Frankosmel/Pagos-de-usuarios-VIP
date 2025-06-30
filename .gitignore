@@ -1,0 +1,9 @@
+# Base de datos
+bot.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Entorno
+.env
