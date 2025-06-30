@@ -1,29 +1,20 @@
 # bot.py
 
-import telebot
-from telebot import types
-from database import init_db
 import config
+from database import init_db
+from scheduler import start_scheduler
 
-# inicializar base de datos
-init_db()
+# Importa los módulos que registran automáticamente todos los handlers
+import user_handlers
+import admin_handlers
 
-# inicializar bot
-bot = telebot.TeleBot(config.TOKEN, parse_mode="HTML")
+if __name__ == "__main__":
+    # 1. Iniciar o actualizar la base de datos
+    init_db()
 
-# comando /start
-@bot.message_handler(commands=["start"])
-def start(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(types.KeyboardButton("💰 Pagar membresía VIP"))
-    bot.send_message(
-        message.chat.id,
-        "👋 <b>Bienvenido</b> al sistema de membresías VIP.\n\n"
-        "Usa el botón para gestionar tu suscripción o pagar tu membresía.",
-        reply_markup=markup
-    )
+    # 2. Arrancar el scheduler de recordatorios (3 días y horas antes)
+    start_scheduler()
 
-# en el siguiente paso agregaremos handlers completos de usuarios y admin
-# por ahora dejamos el polling
-print("✅ Bot en ejecución...")
-bot.infinity_polling()
+    # 3. Arrancar el bot (los handlers ya están cargados)
+    print("✅ Bot en ejecución...")
+    user_handlers.user_bot.infinity_polling()
