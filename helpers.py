@@ -52,7 +52,6 @@ def calculate_expiration_date(codes):
     """
     📅 Devuelve la fecha de vencimiento (último día) del último periodo seleccionado.
     """
-    # Parse y orden por año y mes
     parsed = []
     for c in codes:
         y, mcode = parse_code(c)
@@ -83,7 +82,6 @@ def log_action(action):
 def register_user(user: User):
     """
     👤 Inserta al usuario en 'usuarios' si no existía:
-    - id_usuario, username, nombre, estado='activo', fecha_registro
     """
     c = _conn().cursor()
     c.execute(
@@ -97,8 +95,7 @@ def register_user(user: User):
 
 def save_payment_request(user_id, codes, amount, comprobante=None):
     """
-    📥 Guarda una nueva solicitud en 'pagos':
-    - id_usuario, periodo (lista de códigos), monto, comprobante opcional, estado='pendiente'
+    📥 Guarda una nueva solicitud en 'pagos' con estado 'pendiente'.
     """
     period = ",".join(codes)
     c = _conn().cursor()
