@@ -1,6 +1,6 @@
-user_handlers.py
+# user_handlers.py
 
-import sqlite3 from datetime import datetime from telebot import TeleBot, types import config from helpers import ( register_user, save_payment_request, calculate_total_days, calculate_amount, calculate_expiration_date, db as DB_PATH ) from markups import main_menu, year_selection_keyboard, months_selection_keyboard, admin_action_keyboard
+import sqlite3 from datetime import datetime from telebot import TeleBot, types import config from helpers import ( register_user, save_payment_request, calculate_total_days, calculate_amount, calculate_expiration_date, db as DB_PATH ) from markups import ( main_menu, year_selection_keyboard, months_selection_keyboard, admin_action_keyboard )
 
 Inicializar bot
 
@@ -24,7 +24,7 @@ def get_paid_codes_for_year(uid, year): """ Devuelve lista de códigos de mes ya
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("month_")) def handle_month_toggle(call): , year_str, code = call.data.split("", 2) year = int(year_str) uid = call.from_user.id tag = f"{year}-{code}" sel = selected_months.setdefault(uid, []) if tag in sel: sel.remove(tag) else: sel.append(tag) # Re-renderizar teclado con exclusiones exclude = get_paid_codes_for_year(uid, year) bot.edit_message_reply_markup( call.message.chat.id, call.message.message_id, reply_markup=months_selection_keyboard(year, sel, exclude) ) bot.answer_callback_query(call.id, f"Seleccionados: {', '.join(sel) or 'ninguno'}")
 
-@bot.callback_query_handler(func=lambda c: c.data == "confirm_payment") def handle_confirm_payment(call): uid = call.from_user.id codes = selected_months.get(uid, []) if not codes: bot.answer_callback_query(call.id, "❗ Debes seleccionar al menos un mes.") return # Calcular totales y expiración total_days = calculate_total_days(codes) amount = calculate_amount(total_days, config.PRECIO_DIARIO_CUP) expire = calculate_expiration_date(codes) # Guardar solicitud save_payment_request(uid, codes, amount) # Enviar resumen al usuario bot.send_message( call.message.chat.id, f"💵 <b>Resumen de tu pago</b>:\n" f"• Días totales: {total_days}\n" f"• Monto: {amount} CUP\n" f"• Fecha de vencimiento: {expire}\n\n" "📲 Por favor envía tu comprobante (foto o texto) para revisión.", parse_mode="HTML", reply_markup=main_menu() ) bot.answer_callback_query(call.id)
+@bot.callback_query_handler(func=lambda c: c.data == "confirm_payment") def handle_confirm_payment(call): uid = call.from_user.id codes = selected_months.get(uid, []) if not codes: bot.answer_callback_query(call.id, "❗ Debes seleccionar al menos un mes.") return # Calcular totales y expiración total_days = calculate_total_days(codes) amount = calculate_amount(total_days, config.PRECIO_DIARIO_CUP) expire_date = calculate_expiration_date(codes) # Guardar solicitud save_payment_request(uid, codes, amount) # Enviar resumen al usuario bot.send_message( call.message.chat.id, f"💵 <b>Resumen de tu pago</b>:\n" f"• Días totales: {total_days}\n" f"• Monto: {amount} CUP\n" f"• Fecha de vencimiento: {expire_date}\n\n" "📲 Por favor envía tu comprobante (foto o texto) para revisión.", parse_mode="HTML", reply_markup=main_menu() ) bot.answer_callback_query(call.id)
 
 @bot.callback_query_handler(func=lambda c: c.data == "cancel") def handle_cancel(call): uid = call.from_user.id selected_year.pop(uid, None) selected_months.pop(uid, None) bot.send_message( call.message.chat.id, "❌ Operación <b>cancelada</b>.", parse_mode="HTML", reply_markup=main_menu() ) bot.answer_callback_query(call.id)
 
